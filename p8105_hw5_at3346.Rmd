@@ -7,6 +7,7 @@ output: github_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(dplyr)
 
 knitr::opts_chunk$set(
 	echo = TRUE,
@@ -30,7 +31,44 @@ theme_set(theme_minimal() + theme(legend.position = "bottom"))
 set.seed(10)
 
 iris_with_missing = iris %>% 
+  janitor::clean_names() %>% 
   map_df(~replace(.x, sample(1:150, 20), NA)) %>%
-  mutate(Species = as.character(Species))
+  mutate(species = as.character(species))
+
+
+iris_func = function(x) { 
+  
+  if (is.numeric(x)){
+      na_index = which(is.na(x))        
+      mean_x = round(mean(x, na.rm = TRUE), digits = 1)
+      x[na_index] = mean_x
+      return(x)
+  }
+  
+  else {
+    replace (x, is.na(x), "virginica")
+  }
+  
+}
+  
+iris_no_missing = map_df(iris_with_missing, ~iris_func(.x))
+
+
+
+
+
+iris_func_2 = function(x) { 
+  
+  if (is.numeric(x)){
+      replace(x, is.na(x), round(mean(x, na.rm = TRUE), digits = 1))
+  }
+  
+  else {
+    replace (x, is.na(x), "virginica")
+  }
+  
+}
+  
+iris_no_missing_2 = map_df(iris_with_missing, ~iris_func_2(.x))
 ```
 
