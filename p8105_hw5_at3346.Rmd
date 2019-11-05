@@ -8,6 +8,7 @@ output: github_document
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(dplyr)
+library(readxl)
 
 knitr::opts_chunk$set(
 	echo = TRUE,
@@ -51,3 +52,46 @@ iris_func = function(x) {
 iris_no_missing = map_df(iris_with_missing, ~iris_func(.x))
 ```
 
+
+
+## Problem 2
+```{r}
+file_names = tibble(
+  name = list.files(path = "./data/", all.files = TRUE, no.. = TRUE),
+  file_path = str_c("./data/", name))
+
+source_func = function(x){
+  read_csv(x)
+}
+
+long_study = file_names %>% 
+  mutate(source_name = map(file_names$file_path, source_func)) %>% 
+  unnest() %>% 
+  janitor::clean_names() %>% 
+  select(-file_path) %>% 
+  separate(name, into = c("study_arm","subject_id", "file_type")) %>%
+  select(-file_type)
+```
+
+```{r spaghetti_plot}
+spaghetti = long_study %>% 
+    pivot_longer(
+    cols = starts_with("week_"),
+    names_to = "week",
+    names_prefix = "week_",
+    values_to = "obs_value") %>% 
+  group_by(subject_id) %>% 
+  ggplot(aes(x = week, y = obs_value, color = study_arm, group = study_arm)) + 
+  geom_path() +
+  labs(
+    title = "Observations On Each Subject Over Time",
+    x = "Week",
+    y = "Weekly Observation Value",
+    color = "Study Arm") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+spaghetti
+```
+
+
+Based on visually inspecting the spaghetti plot, the weekly observation values for subjects in the experimental arm of the study are, on average, greater than the weekly observation values for the control arm of the study. 
